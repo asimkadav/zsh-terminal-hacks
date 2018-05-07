@@ -1,15 +1,14 @@
-#my zsh setup for osx
+# my zsh setup for osx
 
-###Requirements
+## Requirements
 
-## homebrew
+### homebrew
 
 
 ### Setup
 
-chmod +x install.sh
-
-sh install.sh
+  chmod +x install.sh
+  sh install.sh
 
 
 
