@@ -13,7 +13,12 @@ cp ~/.vimrc ~/.vimrc.backup
 cp ./.vimrc ~/.vimrc
 cp -r ./.zsh* ~/
 
+brew install gh
+brew install git-delta
+brew install fzf
+
 # gh commands
+gh config set pager 'delta -s'
 gh alias set patchdiff --shell 'id="$(gh pr list -L100 | fzf | cut -f1)"; [ -n "$id" ] && gh pr diff "$id" --patch'
 gh alias set co --shell 'id="$(gh pr list -L100 | fzf | cut -f1)"; [ -n "$id" ] && gh pr checkout "$id"'
 gh alias set listdiff --shell 'gh pr list  | fzf --preview "gh pr diff --color=always {+1}"'
