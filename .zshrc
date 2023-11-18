@@ -71,7 +71,7 @@ plugins=(
   pylint
   pip
   brew
-  macox
+  macos
   colored-man-pages
   github
  )
