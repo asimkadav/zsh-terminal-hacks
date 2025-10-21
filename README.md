@@ -191,6 +191,10 @@ claude-review --commits 20
 claude-review -d
 claude-review --diff
 
+# Use a specific theme
+claude-review -t cyberpunk
+claude-review --theme solaris
+
 # Help
 claude-review -h
 ```
@@ -202,6 +206,38 @@ claude-review -h
 - ⚡ Fast fuzzy search
 - 📋 File statistics (size, lines changed, modified time)
 - 🎯 Git status icons (●=modified, ✚=added, ✖=deleted, ?=untracked)
+- 🌈 **Three gorgeous themes** - change on the fly!
+
+**Themes:**
+
+1. **Default** - Classic terminal colors, timeless and professional
+   ```bash
+   claude-review --theme default
+   ```
+
+2. **Cyberpunk** ⚡ - Neon colors, futuristic vibes, Matrix-inspired
+   - Neon cyan, magenta, and green
+   - High contrast for night coding
+   - Epic ASCII art
+   ```bash
+   claude-review --theme cyberpunk
+   # Or set as default:
+   export CLAUDE_REVIEW_THEME=cyberpunk
+   ```
+
+3. **Solaris** ☀ - Warm earth tones, sun-inspired golden hour aesthetic
+   - Amber, golden yellow, and warm teal
+   - Easy on the eyes for daytime use
+   - Warm, welcoming color palette
+   ```bash
+   claude-review --theme solaris
+   # Or set as default:
+   export CLAUDE_REVIEW_THEME=solaris
+   ```
+
+**Change theme while using:**
+- Press `6` in the main menu to switch themes interactively
+- Set `CLAUDE_REVIEW_THEME` environment variable for permanent default
 
 ## Customization
 

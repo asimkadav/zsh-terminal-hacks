@@ -110,6 +110,9 @@ export PATH=~/anaconda/bin:$PATH
 # Syntax-highlighted cat for code files
 alias pcat='pygmentize -f terminal256 -O style=native -g'
 
+# Claude Review theme (uncomment and set to: default, cyberpunk, or solaris)
+# export CLAUDE_REVIEW_THEME=cyberpunk
+
 # Load z directory jumper (OS-specific paths)
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS (installed via Homebrew)

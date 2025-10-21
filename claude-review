@@ -10,23 +10,119 @@
 # - Multiple view modes (changed files, all files, commits)
 # - File statistics and metadata
 # - Quick navigation and review
+# - Multiple themes: default, cyberpunk, solaris
 #
 
 set -e
 set -o pipefail
 
-# Colors
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly MAGENTA='\033[0;35m'
-readonly CYAN='\033[0;36m'
-readonly WHITE='\033[1;37m'
-readonly GRAY='\033[0;90m'
+# Default theme
+THEME="${CLAUDE_REVIEW_THEME:-default}"
+
+# Base colors (always available)
+readonly RESET='\033[0m'
 readonly BOLD='\033[1m'
 readonly DIM='\033[2m'
-readonly RESET='\033[0m'
+
+# Theme-specific colors (will be set by init_theme)
+RED=""
+GREEN=""
+YELLOW=""
+BLUE=""
+MAGENTA=""
+CYAN=""
+WHITE=""
+GRAY=""
+ORANGE=""
+PINK=""
+NEON_GREEN=""
+NEON_CYAN=""
+NEON_MAGENTA=""
+
+# Theme colors
+PRIMARY=""
+SECONDARY=""
+ACCENT=""
+HIGHLIGHT=""
+TEXT=""
+BORDER=""
+
+# Initialize theme colors
+init_theme() {
+    case "$THEME" in
+        cyberpunk)
+            # Cyberpunk: Neon colors, high contrast
+            RED='\033[38;5;197m'           # Hot pink/red
+            GREEN='\033[38;5;46m'          # Neon green
+            YELLOW='\033[38;5;226m'        # Bright yellow
+            BLUE='\033[38;5;33m'           # Electric blue
+            MAGENTA='\033[38;5;201m'       # Neon magenta
+            CYAN='\033[38;5;51m'           # Neon cyan
+            WHITE='\033[38;5;231m'         # Pure white
+            GRAY='\033[38;5;240m'          # Dark gray
+            ORANGE='\033[38;5;208m'        # Bright orange
+            PINK='\033[38;5;213m'          # Hot pink
+            NEON_GREEN='\033[38;5;82m'     # Matrix green
+            NEON_CYAN='\033[38;5;87m'      # Bright cyan
+            NEON_MAGENTA='\033[38;5;165m'  # Purple magenta
+
+            PRIMARY="$NEON_CYAN"
+            SECONDARY="$NEON_MAGENTA"
+            ACCENT="$NEON_GREEN"
+            HIGHLIGHT="$PINK"
+            TEXT="$WHITE"
+            BORDER="$NEON_CYAN"
+            ;;
+
+        solaris)
+            # Solaris: Warm, sun-inspired earth tones
+            RED='\033[38;5;166m'           # Burnt orange
+            GREEN='\033[38;5;100m'         # Olive green
+            YELLOW='\033[38;5;178m'        # Golden yellow
+            BLUE='\033[38;5;68m'           # Warm blue
+            MAGENTA='\033[38;5;133m'       # Muted purple
+            CYAN='\033[38;5;73m'           # Teal
+            WHITE='\033[38;5;230m'         # Warm white
+            GRAY='\033[38;5;243m'          # Warm gray
+            ORANGE='\033[38;5;172m'        # Amber
+            PINK='\033[38;5;175m'          # Rose
+            NEON_GREEN="$GREEN"
+            NEON_CYAN="$CYAN"
+            NEON_MAGENTA="$MAGENTA"
+
+            PRIMARY="$ORANGE"
+            SECONDARY="$YELLOW"
+            ACCENT="$CYAN"
+            HIGHLIGHT="$RED"
+            TEXT="$WHITE"
+            BORDER="$ORANGE"
+            ;;
+
+        *)
+            # Default: Classic terminal colors
+            RED='\033[0;31m'
+            GREEN='\033[0;32m'
+            YELLOW='\033[1;33m'
+            BLUE='\033[0;34m'
+            MAGENTA='\033[0;35m'
+            CYAN='\033[0;36m'
+            WHITE='\033[1;37m'
+            GRAY='\033[0;90m'
+            ORANGE='\033[38;5;208m'
+            PINK='\033[38;5;213m'
+            NEON_GREEN="$GREEN"
+            NEON_CYAN="$CYAN"
+            NEON_MAGENTA="$MAGENTA"
+
+            PRIMARY="$CYAN"
+            SECONDARY="$MAGENTA"
+            ACCENT="$GREEN"
+            HIGHLIGHT="$YELLOW"
+            TEXT="$WHITE"
+            BORDER="$CYAN"
+            ;;
+    esac
+}
 
 # Icons for git status
 readonly ICON_MODIFIED="●"
@@ -127,9 +223,9 @@ get_diff_stats() {
 list_changed_files() {
     local show_all="${1:-false}"
 
-    echo -e "${BOLD}${CYAN}╔════════════════════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${BOLD}${CYAN}║${RESET}  ${BOLD}${WHITE}Recently Modified Files${RESET} ${DIM}(Claude's Changes)${RESET}                           ${BOLD}${CYAN}║${RESET}"
-    echo -e "${BOLD}${CYAN}╚════════════════════════════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${BOLD}${BORDER}╔════════════════════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}${BORDER}║${RESET}  ${BOLD}${TEXT}Recently Modified Files${RESET} ${DIM}(Claude's Changes)${RESET}                           ${BOLD}${BORDER}║${RESET}"
+    echo -e "${BOLD}${BORDER}╚════════════════════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
 
     # Get list of changed files
@@ -174,13 +270,13 @@ list_changed_files() {
         local mod_time=$(get_mod_time "$file")
 
         # Color the filename based on type
-        local filename_color="$WHITE"
+        local filename_color="$TEXT"
         case "${file##*.}" in
             sh|bash|zsh)     filename_color="$GREEN" ;;
             md|txt)          filename_color="$CYAN" ;;
             json|yaml|yml)   filename_color="$YELLOW" ;;
             js|ts|py|rb)     filename_color="$BLUE" ;;
-            *)               filename_color="$WHITE" ;;
+            *)               filename_color="$TEXT" ;;
         esac
 
         # Truncate filename if too long
@@ -202,51 +298,51 @@ list_changed_files() {
 
 # Interactive file browser with fzf and delta
 interactive_review() {
-    local preview_cmd='
+    local preview_cmd="
         file={};
-        echo -e "\033[1;36m╔════════════════════════════════════════════════════════════════╗\033[0m";
-        echo -e "\033[1;36m║\033[0m  \033[1;37mFile: {}\033[0m";
-        echo -e "\033[1;36m╚════════════════════════════════════════════════════════════════╝\033[0m";
-        echo "";
+        echo -e \"${BOLD}${BORDER}╔════════════════════════════════════════════════════════════════╗${RESET}\";
+        echo -e \"${BOLD}${BORDER}║${RESET}  ${BOLD}${TEXT}File: {}${RESET}\";
+        echo -e \"${BOLD}${BORDER}╚════════════════════════════════════════════════════════════════╝${RESET}\";
+        echo \"\";
 
         # Show file stats
-        if [ -f "$file" ]; then
-            echo -e "\033[1;33mFile Information:\033[0m";
-            echo -e "  Size: $(ls -lh "$file" 2>/dev/null | awk "{print \$5}" || echo "unknown")";
-            echo -e "  Type: $(file -b "$file" 2>/dev/null || echo "unknown")";
-            echo "";
+        if [ -f \"\$file\" ]; then
+            echo -e \"${BOLD}${HIGHLIGHT}File Information:${RESET}\";
+            echo -e \"  Size: \$(ls -lh \"\$file\" 2>/dev/null | awk \"{print \\\$5}\" || echo \"unknown\")\";
+            echo -e \"  Type: \$(file -b \"\$file\" 2>/dev/null || echo \"unknown\")\";
+            echo \"\";
         fi;
 
         # Show diff stats
-        if git diff --numstat HEAD "$file" 2>/dev/null | grep -q .; then
-            echo -e "\033[1;33mDiff Statistics:\033[0m";
-            git diff --stat HEAD "$file" 2>/dev/null;
-            echo "";
+        if git diff --numstat HEAD \"\$file\" 2>/dev/null | grep -q .; then
+            echo -e \"${BOLD}${HIGHLIGHT}Diff Statistics:${RESET}\";
+            git diff --stat HEAD \"\$file\" 2>/dev/null;
+            echo \"\";
         fi;
 
         # Show diff with delta if available, otherwise use git diff with color
-        echo -e "\033[1;36m═══════════════════════ Changes ═══════════════════════\033[0m";
+        echo -e \"${BOLD}${BORDER}═══════════════════════ Changes ═══════════════════════${RESET}\";
         if command -v delta >/dev/null 2>&1; then
-            git diff --color=always HEAD "$file" 2>/dev/null | delta --side-by-side --width ${FZF_PREVIEW_COLUMNS:-160} 2>/dev/null || \
-            git diff --color=always HEAD "$file" 2>/dev/null || \
-            echo "No changes or file not tracked";
+            git diff --color=always HEAD \"\$file\" 2>/dev/null | delta --side-by-side --width \${FZF_PREVIEW_COLUMNS:-160} 2>/dev/null || \
+            git diff --color=always HEAD \"\$file\" 2>/dev/null || \
+            echo \"No changes or file not tracked\";
         else
-            git diff --color=always HEAD "$file" 2>/dev/null || echo "No changes or file not tracked";
+            git diff --color=always HEAD \"\$file\" 2>/dev/null || echo \"No changes or file not tracked\";
         fi;
 
         # If no diff, show file content with syntax highlighting
-        if ! git diff --quiet HEAD "$file" 2>/dev/null; then
+        if ! git diff --quiet HEAD \"\$file\" 2>/dev/null; then
             :
         else
-            echo "";
-            echo -e "\033[1;33mFile Content:\033[0m";
+            echo \"\";
+            echo -e \"${BOLD}${HIGHLIGHT}File Content:${RESET}\";
             if command -v pygmentize >/dev/null 2>&1; then
-                pygmentize -f terminal256 -O style=monokai -g "$file" 2>/dev/null || cat "$file";
+                pygmentize -f terminal256 -O style=monokai -g \"\$file\" 2>/dev/null || cat \"\$file\";
             else
-                cat "$file" 2>/dev/null || echo "Cannot read file";
+                cat \"\$file\" 2>/dev/null || echo \"Cannot read file\";
             fi;
         fi
-    '
+    "
 
     # Get list of files
     local files=$(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only 2>/dev/null)
@@ -274,18 +370,19 @@ interactive_review() {
         --height=100% \
         --preview-window=right:60%:wrap \
         --preview="bash -c '$preview_cmd'" \
-        --header='┃ ↑/↓: Navigate | Enter: View Full Diff | Esc: Quit | Ctrl-A: Show All ┃' \
+        --header="┃ ↑/↓: Navigate | Enter: View Full Diff | Esc: Quit | Ctrl-A: Show All | Theme: $THEME ┃" \
         --header-first \
         --border=rounded \
-        --prompt='🔍 Select file to review > ' \
+        --prompt="🔍 Select file to review > " \
         --pointer='▶' \
         --marker='✓' \
+        --color="border:$([[ "$THEME" == "cyberpunk" ]] && echo "magenta" || [[ "$THEME" == "solaris" ]] && echo "yellow" || echo "cyan")" \
         --bind 'enter:execute(
             file=$(echo {} | sed "s/^.*  //");
             clear;
-            echo -e "\033[1;36m╔════════════════════════════════════════════════════════════════╗\033[0m";
-            echo -e "\033[1;36m║\033[0m  Reviewing: $file";
-            echo -e "\033[1;36m╚════════════════════════════════════════════════════════════════╝\033[0m";
+            echo -e "'"${BOLD}${BORDER}"'╔════════════════════════════════════════════════════════════════╗'"${RESET}"'";
+            echo -e "'"${BOLD}${BORDER}"'║'"${RESET}"'  Reviewing: $file";
+            echo -e "'"${BOLD}${BORDER}"'╚════════════════════════════════════════════════════════════════╝'"${RESET}"'";
             echo "";
             if command -v delta >/dev/null 2>&1; then
                 git diff HEAD "$file" | delta --paging=always || git diff HEAD "$file" | less -R;
@@ -303,9 +400,9 @@ interactive_review() {
 show_recent_commits() {
     local limit="${1:-10}"
 
-    echo -e "${BOLD}${CYAN}╔════════════════════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${BOLD}${CYAN}║${RESET}  ${BOLD}${WHITE}Recent Commits${RESET}                                                          ${BOLD}${CYAN}║${RESET}"
-    echo -e "${BOLD}${CYAN}╚════════════════════════════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${BOLD}${BORDER}╔════════════════════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}${BORDER}║${RESET}  ${BOLD}${TEXT}Recent Commits${RESET}                                                          ${BOLD}${BORDER}║${RESET}"
+    echo -e "${BOLD}${BORDER}╚════════════════════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
 
     git log --color=always --pretty=format:"%C(yellow)%h%C(reset) %C(cyan)%ad%C(reset) %C(white)%s%C(reset) %C(dim)- %an%C(reset)" --date=relative -n "$limit" | \
@@ -318,9 +415,9 @@ show_recent_commits() {
 
 # Show statistics
 show_stats() {
-    echo -e "${BOLD}${CYAN}╔════════════════════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${BOLD}${CYAN}║${RESET}  ${BOLD}${WHITE}Repository Statistics${RESET}                                                  ${BOLD}${CYAN}║${RESET}"
-    echo -e "${BOLD}${CYAN}╚════════════════════════════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${BOLD}${BORDER}╔════════════════════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}${BORDER}║${RESET}  ${BOLD}${TEXT}Repository Statistics${RESET}                                                  ${BOLD}${BORDER}║${RESET}"
+    echo -e "${BOLD}${BORDER}╚════════════════════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
 
     local branch=$(git branch --show-current 2>/dev/null || echo "unknown")
@@ -342,11 +439,70 @@ show_stats() {
     echo ""
 }
 
-# Main menu
+# Show menu with theme-specific ASCII art
 show_menu() {
     clear
-    echo -e "${BOLD}${MAGENTA}"
-    cat << "EOF"
+
+    case "$THEME" in
+        cyberpunk)
+            echo -e "${BOLD}${NEON_MAGENTA}"
+            cat << "EOF"
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║ ▄████▄   ██▓    ▄▄▄       █    ██ ▓█████▄ ▓█████            ║
+    ║▒██▀ ▀█  ▓██▒   ▒████▄     ██  ▓██▒▒██▀ ██▌▓█   ▀            ║
+    ║▒▓█    ▄ ▒██░   ▒██  ▀█▄  ▓██  ▒██░░██   █▌▒███              ║
+    ║▒▓▓▄ ▄██▒▒██░   ░██▄▄▄▄██ ▓▓█  ░██░░▓█▄   ▌▒▓█  ▄            ║
+    ║▒ ▓███▀ ░░██████▒▓█   ▓██▒▒▒█████▓ ░▒████▓ ░▒████▒           ║
+    ║░ ░▒ ▒  ░░ ▒░▓  ░▒▒   ▓▒█░░▒▓▒ ▒ ▒  ▒▒▓  ▒ ░░ ▒░ ░           ║
+    ║  ░  ▒   ░ ░ ▒  ░ ▒   ▒▒ ░░░▒░ ░ ░  ░ ▒  ▒  ░ ░  ░           ║
+    ║░          ░ ░    ░   ▒    ░░░ ░ ░  ░ ░  ░    ░              ║
+    ║░ ░          ░  ░     ░  ░   ░        ░       ░  ░           ║
+    ║░                                    ░                        ║
+    ║                                                               ║
+    ║         ██▀███  ▓█████ ██▒   █▓ ██▓▓█████ █     █░          ║
+    ║        ▓██ ▒ ██▒▓█   ▀▓██░   █▒▓██▒▓█   ▀▓█░ █ ░█░          ║
+    ║        ▓██ ░▄█ ▒▒███   ▓██  █▒░▒██▒▒███  ▒█░ █ ░█           ║
+    ║        ▒██▀▀█▄  ▒▓█  ▄  ▒██ █░░░██░▒▓█  ▄░█░ █ ░█           ║
+    ║        ░██▓ ▒██▒░▒████▒  ▒▀█░  ░██░░▒████░░██▒██▓           ║
+    ║        ░ ▒▓ ░▒▓░░░ ▒░ ░  ░ ▐░  ░▓  ░░ ▒░ ░░ ▓░▒ ▒           ║
+    ║          ░▒ ░ ▒░ ░ ░  ░  ░ ░░   ▒ ░ ░ ░  ░  ▒ ░ ░           ║
+    ║          ░░   ░    ░       ░░   ▒ ░   ░     ░   ░           ║
+    ║           ░        ░  ░     ░   ░     ░  ░    ░             ║
+    ║                            ░                                 ║
+    ║                  ⚡ CYBERPUNK THEME ⚡                        ║
+    ╚═══════════════════════════════════════════════════════════════╝
+EOF
+            ;;
+
+        solaris)
+            echo -e "${BOLD}${ORANGE}"
+            cat << "EOF"
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║            ::::::::  :::            :::     :::    ::: ::::::::║
+    ║          :+:    :+: :+:          :+: :+:   :+:    :+::+:    :+║
+    ║         +:+        +:+         +:+   +:+  +:+    +:++:+       ║
+    ║        +#+        +#+        +#++:++#++: +#+    +:++#++:++#  ║
+    ║       +#+        +#+        +#+     +#+ +#+    +#+       +#+ ║
+    ║      #+#    #+# #+#        #+#     #+# #+#    #+##+#    #+# ║
+    ║     ########  ########## ###     ###  ########  ########   ║
+    ║                                                               ║
+    ║    :::::::::  :::::::::: :::     ::: ::::::::::: :::::::::: ║
+    ║   :+:    :+: :+:        :+:     :+:     :+:     :+:         ║
+    ║  +:+    +:+ +:+        +:+     +:+     +:+     +:+          ║
+    ║ +#++:++#:  +#++:++#   +#+     +:+     +#+     +#++:++#     ║
+    ║+#+        +#+         +#+   +#+      +#+     +#+            ║
+    ║#+#        #+#          #+#+#+#       #+#     #+#            ║
+    ║###        ##########     ###     ########### ##########     ║
+    ║                                                               ║
+    ║                  ☀ SOLARIS THEME ☀                          ║
+    ║              Golden Hour • Code Review                       ║
+    ╚═══════════════════════════════════════════════════════════════╝
+EOF
+            ;;
+
+        *)
+            echo -e "${BOLD}${MAGENTA}"
+            cat << "EOF"
     ╔═══════════════════════════════════════════════════════════════╗
     ║                                                               ║
     ║   ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗          ║
@@ -360,24 +516,59 @@ show_menu() {
     ║                                                               ║
     ╚═══════════════════════════════════════════════════════════════╝
 EOF
+            ;;
+    esac
     echo -e "${RESET}"
 
     echo -e "${BOLD}Select an option:${RESET}"
     echo ""
-    echo -e "  ${GREEN}1)${RESET} 🔍 Interactive Review   ${DIM}(Browse files with fzf + delta)${RESET}"
-    echo -e "  ${YELLOW}2)${RESET} 📋 List Changed Files   ${DIM}(Show recent modifications)${RESET}"
-    echo -e "  ${CYAN}3)${RESET} 📊 Show Statistics      ${DIM}(Repository stats)${RESET}"
-    echo -e "  ${MAGENTA}4)${RESET} 📜 Recent Commits       ${DIM}(Last 10 commits)${RESET}"
+    echo -e "  ${PRIMARY}1)${RESET} 🔍 Interactive Review   ${DIM}(Browse files with fzf + delta)${RESET}"
+    echo -e "  ${SECONDARY}2)${RESET} 📋 List Changed Files   ${DIM}(Show recent modifications)${RESET}"
+    echo -e "  ${ACCENT}3)${RESET} 📊 Show Statistics      ${DIM}(Repository stats)${RESET}"
+    echo -e "  ${HIGHLIGHT}4)${RESET} 📜 Recent Commits       ${DIM}(Last 10 commits)${RESET}"
     echo -e "  ${BLUE}5)${RESET} 🔄 Full Diff            ${DIM}(All changes in delta)${RESET}"
+    echo -e "  ${MAGENTA}6)${RESET} 🎨 Change Theme         ${DIM}(Current: $THEME)${RESET}"
     echo -e "  ${RED}q)${RESET} 🚪 Quit"
     echo ""
-    echo -ne "${BOLD}${WHITE}Choice > ${RESET}"
+    echo -ne "${BOLD}${TEXT}Choice > ${RESET}"
+}
+
+# Change theme interactively
+change_theme() {
+    clear
+    echo -e "${BOLD}${PRIMARY}╔════════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}${PRIMARY}║${RESET}  ${BOLD}${TEXT}Theme Selection${RESET}                                               ${BOLD}${PRIMARY}║${RESET}"
+    echo -e "${BOLD}${PRIMARY}╚════════════════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "  ${GREEN}1)${RESET} Default   ${DIM}(Classic terminal colors)${RESET}"
+    echo -e "  ${NEON_MAGENTA}2)${RESET} Cyberpunk ${DIM}(Neon colors, futuristic vibes)${RESET}"
+    echo -e "  ${ORANGE}3)${RESET} Solaris   ${DIM}(Warm earth tones, sun-inspired)${RESET}"
+    echo ""
+    echo -ne "${BOLD}Select theme > ${RESET}"
+    read -r theme_choice
+
+    case "$theme_choice" in
+        1) THEME="default" ;;
+        2) THEME="cyberpunk" ;;
+        3) THEME="solaris" ;;
+        *)
+            echo -e "${RED}Invalid choice${RESET}"
+            sleep 1
+            return
+            ;;
+    esac
+
+    init_theme
+    echo ""
+    echo -e "${GREEN}Theme changed to: $THEME${RESET}"
+    echo -e "${DIM}You can also set CLAUDE_REVIEW_THEME environment variable${RESET}"
+    sleep 2
 }
 
 # Show full diff with delta
 show_full_diff() {
     clear
-    echo -e "${BOLD}${CYAN}Showing all changes with delta...${RESET}"
+    echo -e "${BOLD}${BORDER}Showing all changes with delta...${RESET}"
     echo ""
 
     if command -v delta >/dev/null 2>&1; then
@@ -406,6 +597,7 @@ main() {
         echo "  -s, --stats         Show repository statistics"
         echo "  -c, --commits [N]   Show N recent commits (default: 10)"
         echo "  -d, --diff          Show full diff with delta"
+        echo "  -t, --theme THEME   Set theme (default, cyberpunk, solaris)"
         echo "  -h, --help          Show this help message"
         echo ""
         echo "Interactive Mode Features:"
@@ -413,6 +605,15 @@ main() {
         echo "  - Live diff preview in split pane"
         echo "  - Syntax highlighting via delta"
         echo "  - Git status icons (●=modified, ✚=added, ✖=deleted, ?=untracked)"
+        echo "  - Multiple themes for different vibes"
+        echo ""
+        echo "Themes:"
+        echo "  default    - Classic terminal colors"
+        echo "  cyberpunk  - Neon colors, futuristic aesthetic"
+        echo "  solaris    - Warm earth tones, sun-inspired"
+        echo ""
+        echo "Environment Variables:"
+        echo "  CLAUDE_REVIEW_THEME - Set default theme"
         echo ""
         echo "Dependencies:"
         echo "  Required: git, fzf"
@@ -420,6 +621,22 @@ main() {
         echo ""
         exit 0
     fi
+
+    # Parse theme option
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -t|--theme)
+                THEME="$2"
+                shift 2
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    # Initialize theme
+    init_theme
 
     check_dependencies
     check_git_repo
@@ -475,9 +692,12 @@ main() {
             5)
                 show_full_diff
                 ;;
+            6)
+                change_theme
+                ;;
             q|Q)
                 clear
-                echo -e "${GREEN}Thanks for reviewing! 👋${RESET}"
+                echo -e "${PRIMARY}Thanks for reviewing! 👋${RESET}"
                 exit 0
                 ;;
             *)
