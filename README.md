@@ -27,6 +27,15 @@ Once installed, you'll have these powerful PR review commands:
 - `gh patchdiff` - View a PR's diff with patch format
 - `gh listdiff` - Browse PRs with live diff preview
 
+### Claude Review - Interactive Code Review UI
+A beautiful terminal interface (inspired by lazygit) for reviewing code changes:
+- `claude-review` - Interactive TUI for reviewing all changes
+- Colorful file listings with git status icons
+- Live diff previews with delta integration
+- Multiple view modes (files, commits, stats)
+- Fuzzy search with fzf
+- Perfect for reviewing Claude Code's changes!
+
 ## Requirements
 
 ### macOS
@@ -157,6 +166,43 @@ fzf
 vim $(fzf)
 ```
 
+### Claude Review - Code Review UI
+```bash
+# Interactive menu mode (default)
+claude-review
+
+# Quick interactive file browser
+claude-review -i
+claude-review --interactive
+
+# List changed files with stats
+claude-review -l
+claude-review --list
+
+# Show repository statistics
+claude-review -s
+claude-review --stats
+
+# Show recent commits
+claude-review -c 10
+claude-review --commits 20
+
+# View full diff with delta
+claude-review -d
+claude-review --diff
+
+# Help
+claude-review -h
+```
+
+**Interactive Features:**
+- 🔍 Browse files with arrow keys
+- 📊 Live diff preview in split pane
+- 🎨 Syntax highlighting via delta
+- ⚡ Fast fuzzy search
+- 📋 File statistics (size, lines changed, modified time)
+- 🎯 Git status icons (●=modified, ✚=added, ✖=deleted, ?=untracked)
+
 ## Customization
 
 ### Adding Zsh Plugins
@@ -267,6 +313,7 @@ If running as root or using sudo, the script will prompt for the target username
 .
 ├── install.sh              # Main installation script
 ├── uninstall.sh            # Uninstallation script
+├── claude-review           # Interactive code review TUI ⭐ NEW!
 ├── .zshrc                  # Zsh configuration
 ├── .vimrc                  # Vim configuration
 ├── .zsh-update             # Oh-My-Zsh update tracker

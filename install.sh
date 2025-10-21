@@ -300,6 +300,44 @@ setup_gh_aliases() {
     log_info "GitHub CLI aliases configured: gh co, gh patchdiff, gh listdiff"
 }
 
+# Install claude-review tool
+install_claude_review() {
+    local script_dir="$1"
+    local target_user="$2"
+    local user_home
+
+    user_home=$(eval echo "~$target_user")
+
+    if [ ! -f "$script_dir/claude-review" ]; then
+        log_warn "claude-review script not found, skipping"
+        return
+    fi
+
+    log_info "Installing claude-review tool..."
+
+    # Create local bin directory if it doesn't exist
+    local bin_dir="$user_home/.local/bin"
+    mkdir -p "$bin_dir"
+
+    # Copy the script
+    cp "$script_dir/claude-review" "$bin_dir/claude-review"
+    chmod +x "$bin_dir/claude-review"
+
+    # Set proper ownership if running as root
+    if [ "$EUID" -eq 0 ]; then
+        chown -R "$target_user:$target_user" "$bin_dir"
+    fi
+
+    # Add to PATH if not already there
+    if ! grep -q ".local/bin" "$user_home/.zshrc" 2>/dev/null; then
+        echo "" >> "$user_home/.zshrc"
+        echo "# Add local bin to PATH for custom tools" >> "$user_home/.zshrc"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$user_home/.zshrc"
+    fi
+
+    log_info "claude-review installed to $bin_dir"
+}
+
 # Copy configuration files
 copy_configs() {
     local target_user="$1"
@@ -383,6 +421,9 @@ main() {
     # Copy configuration files
     copy_configs "$target_user" "$script_dir"
 
+    # Install claude-review tool
+    install_claude_review "$script_dir" "$target_user"
+
     echo
     log_info "=== Installation Complete! ==="
     echo
@@ -390,12 +431,14 @@ main() {
     log_info "1. Log out and back in (or restart your terminal)"
     log_info "2. Run: source ~/.zshrc"
     log_info "3. For GitHub CLI features, authenticate with: gh auth login"
+    log_info "4. Try: claude-review -i (interactive code review UI)"
     echo
     log_info "New commands available:"
-    log_info "  - pcat <file>   : Syntax-highlighted file viewer"
-    log_info "  - gh co         : Interactively checkout a PR"
-    log_info "  - gh patchdiff  : View PR diff with patches"
-    log_info "  - gh listdiff   : Browse PRs with live diff preview"
+    log_info "  - pcat <file>      : Syntax-highlighted file viewer"
+    log_info "  - claude-review    : Interactive terminal UI for code review"
+    log_info "  - gh co            : Interactively checkout a PR"
+    log_info "  - gh patchdiff     : View PR diff with patches"
+    log_info "  - gh listdiff      : Browse PRs with live diff preview"
     echo
 }
 
