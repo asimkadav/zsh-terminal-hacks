@@ -1,0 +1,17 @@
+# Oh-My-Zsh generated files
+.zsh-update
+
+# Backup files
+*.backup.*
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*~
