@@ -4,7 +4,16 @@ set nocompatible
 " Helps force plugins to load correctly when it is turned back on below
 filetype off
 
-" TODO: Load plugins here (pathogen or vundle)
+" Plugin management with vim-plug (install with):
+" curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+"     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+"
+" Uncomment below and run :PlugInstall to install plugins
+" call plug#begin('~/.vim/plugged')
+" Plug 'tpope/vim-sensible'
+" Plug 'tpope/vim-fugitive'
+" Plug 'scrooloose/nerdtree'
+" call plug#end()
 
 " Turn on syntax highlighting
 syntax on
@@ -12,8 +21,8 @@ syntax on
 " For plugins to load correctly
 filetype plugin indent on
 
-" TODO: Pick a leader key
-" let mapleader = ","
+" Set leader key to comma for easier custom mappings
+let mapleader = ","
 
 " Security
 set modelines=0
@@ -93,8 +102,14 @@ map <leader>l :set list!<CR> " Toggle tabs and EOL
 " Color scheme (terminal)
 set t_Co=256
 set background=dark
-let g:solarized_termcolors=256
-let g:solarized_termtrans=1
-" put https://raw.github.com/altercation/vim-colors-solarized/master/colors/solarized.vim
-" in ~/.vim/colors/ and uncomment:
+
+" Solarized color scheme (optional)
+" To enable:
+" 1. mkdir -p ~/.vim/colors
+" 2. curl -fLo ~/.vim/colors/solarized.vim \
+"    https://raw.githubusercontent.com/altercation/vim-colors-solarized/master/colors/solarized.vim
+" 3. Uncomment the lines below
+"
+" let g:solarized_termcolors=256
+" let g:solarized_termtrans=1
 " colorscheme solarized

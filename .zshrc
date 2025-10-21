@@ -2,7 +2,7 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-  export ZSH=/Users/asim/.oh-my-zsh
+export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
@@ -59,9 +59,9 @@ ZSH_THEME="fino"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-  git 
-  brew 
-  python 
+  git
+  brew
+  python
   npm
   zsh-syntax-highlighting
   colorize
@@ -70,11 +70,9 @@ plugins=(
   pyenv
   pylint
   pip
-  brew
-  macos
   colored-man-pages
   github
- )
+)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -108,6 +106,16 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 #
 export PATH=~/anaconda/bin:$PATH
-alias pcat='pygmentize -f terminal256 -O style=native -g'
-source ~/.oh-my-zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh  
 
+# Syntax-highlighted cat for code files
+alias pcat='pygmentize -f terminal256 -O style=native -g'
+
+# Load z directory jumper (OS-specific paths)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS (installed via Homebrew)
+  [ -f /usr/local/etc/profile.d/z.sh ] && source /usr/local/etc/profile.d/z.sh
+  [ -f /opt/homebrew/etc/profile.d/z.sh ] && source /opt/homebrew/etc/profile.d/z.sh
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  # Linux
+  [ -f /usr/local/bin/z.sh ] && source /usr/local/bin/z.sh
+fi
